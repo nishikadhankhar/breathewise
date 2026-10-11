@@ -1,0 +1,6 @@
+__pycache__/
+build/
+outbox/
+.packaged.yaml
+.DS_Store
+DEMO_SCRIPT.md

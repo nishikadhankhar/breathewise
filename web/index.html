@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BreatheWise: school air plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #F4F1EA; --card: #FFFDF8; --ink: #18201C; --muted: #5E675F; --line: #DDD8CB;
+    --brand: #14493A; --brand-soft: #DCE9E2; --cream: #F6F2E8; --dim: #A9B3AA;
+    --bad: #9E2A1F; --bad-bg: #F8E3DD; --warn: #8A5200; --warn-bg: #FBEBCB; --ok: #1D6B45; --ok-bg: #DFF0E4;
+    --aqi-good: #3A9D5D; --aqi-satisfactory: #9BC53D; --aqi-moderate: #E8C53A;
+    --aqi-poor: #EC8F2F; --aqi-very-poor: #C8391F; --aqi-severe: #7D1F2B;
+    --sans: Inter, "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif: Fraunces, Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.45 var(--sans); }
+  [hidden] { display: none !important; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+  .page { max-width: 1280px; margin: 0 auto; padding: 20px 20px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .topbar { display: flex; flex-direction: column; gap: 20px; }
+  .wordmark { font: 600 28px/1.2 var(--serif); color: var(--brand); margin: 0; letter-spacing: -0.01em; }
+  .controls { display: flex; flex-direction: column; gap: 8px; }
+  .field { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 14px; }
+  .field span { display: block; font-size: 11px; color: var(--muted); }
+  .field select, .field input { width: 100%; border: 0; background: transparent; padding: 1px 0; font-weight: 500; font-size: 14px; outline: none; }
+  .field:focus-within { border-color: var(--brand); }
+
+  .content { display: flex; flex-direction: column; gap: 20px; }
+  .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .col:not(:has(> :not([hidden]))) { display: none; }
+  @media (min-width: 980px) {
+    .page { padding: 28px 80px 56px; gap: 28px; }
+    .topbar { flex-direction: row; justify-content: space-between; align-items: center; }
+    .controls { flex-direction: row; gap: 10px; }
+    .controls .field:first-child { width: 320px; }
+    .controls .field:last-child { width: 220px; }
+    .content { display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 1fr); gap: 28px; align-items: start;
+      grid-template-areas: "a b" "c c" "d e"; }
+    .area-a { grid-area: a; } .area-b { grid-area: b; } .area-c { grid-area: c; } .area-d { grid-area: d; } .area-e { grid-area: e; }
+    .hero { padding: 28px !important; }
+    .hero h2 { font-size: 36px !important; line-height: 42px !important; }
+    .bars { gap: 10px !important; }
+  }
+
+  .status { color: var(--muted); margin: 0; }
+  .status.error { color: var(--bad); background: var(--bad-bg); border-radius: 12px; padding: 12px 14px; }
+
+  .live { border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .live.ok { background: var(--ok-bg); color: var(--ok); }
+  .live.some { background: var(--warn-bg); color: var(--warn); }
+  .live.none { background: var(--bad-bg); color: var(--bad); }
+  .live .pulse { width: 10px; height: 10px; border-radius: 50%; background: currentColor; margin-top: 5px; flex: none; }
+  .live .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .live .advice { font-size: 17px; font-weight: 600; line-height: 1.3; margin: 2px 0; }
+  .live .detail { font-size: 13px; opacity: 0.9; }
+
+  .hero { background: var(--ink); color: var(--cream); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .hero .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .hero .date { font-size: 12px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dim); }
+  .hero h2 { font: 600 27px/33px var(--serif); margin: 0; }
+  .hero .summary { margin: 0; color: #C9D0C8; line-height: 20px; }
+  .hero hr { border: 0; height: 1px; background: rgba(255, 255, 255, 0.14); margin: 0; width: 100%; }
+  .hero .label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--dim); text-transform: uppercase; }
+  .hero .note { margin: 0; font-size: 12px; line-height: 17px; color: var(--dim); }
+  .bars { display: flex; gap: 6px; align-items: flex-end; overflow-x: auto; }
+  .bars .hour { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bars.long .hour { min-width: 30px; }
+  .bars .value { font-size: 13px; font-weight: 600; }
+  .bars .bar { width: 100%; border-radius: 6px; }
+  .bars .time { font-size: 11px; color: var(--dim); white-space: nowrap; }
+  .bars .hour.current .time { color: var(--cream); font-weight: 600; }
+
+  .week { display: flex; gap: 8px; overflow-x: auto; padding: 2px; margin: -2px; }
+  .week button { flex: 1 0 96px; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; cursor: pointer; }
+  .week button[aria-current=true] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .week .day { display: block; font-weight: 600; font-size: 13px; }
+  .week .state { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; margin-top: 2px; }
+  .week .state i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .week .clear i { background: var(--ok); } .week .alert i { background: var(--bad); } .week .alert { color: var(--bad); font-weight: 600; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .stat b { display: block; font: 600 28px/1.15 var(--serif); color: var(--brand); white-space: nowrap; }
+  .stat b span { color: var(--muted); font-size: 20px; }
+  .stat p { margin: 4px 0 0; font-size: 13px; line-height: 18px; color: var(--muted); }
+
+  .bt { display: grid; grid-template-columns: minmax(120px, 1.1fr) 2fr 2fr; gap: 10px 16px; align-items: center; font-size: 13px; }
+  .bt .head { font-size: 12px; color: var(--muted); line-height: 16px; }
+  .bt .name { font-weight: 600; }
+  .bt .ours { color: var(--brand); }
+  .bt .meter { display: flex; align-items: center; gap: 8px; }
+  .bt .track { flex: 1; height: 12px; border-radius: 99px; background: var(--paper); overflow: hidden; }
+  .bt .track i { display: block; height: 100%; border-radius: 99px; }
+  .bt .num { width: 78px; flex: none; font-variant-numeric: tabular-nums; font-weight: 600; }
+  @media (max-width: 600px) { .bt { grid-template-columns: 1fr; gap: 4px; } .bt .head { display: none; } .bt .name { margin-top: 10px; }
+    .bt .meter::before { content: attr(data-label); width: 96px; flex: none; font-size: 11px; color: var(--muted); } }
+  .grid-scroll { overflow-x: auto; }
+  .swipe { display: none; }
+  @media (max-width: 979px) { .swipe { display: block; } }
+  .grid { display: grid; gap: 4px; width: 100%; }
+  .grid .klass { display: flex; align-items: center; font-weight: 600; font-size: 13px; color: var(--brand); }
+  .grid .slot { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 0 0 4px; background: none; font-size: 12px; font-weight: 600; }
+  .grid .chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; white-space: nowrap; }
+  .cell { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; overflow: hidden; border-radius: 8px; padding: 6px 8px;
+    background: var(--card); border: 1px solid var(--line); color: var(--ink); font-size: 12px; line-height: 15px; font-weight: 500;
+    overflow-wrap: anywhere; transition: background 0.5s, color 0.5s, border-color 0.5s; }
+  .cell small { font-size: 10px; line-height: 13px; font-weight: 400; color: var(--muted); }
+  .cell .t1 { display: none; }
+  .view-after .cell .t0 { display: none; } .view-after .cell .t1 { display: inline; }
+  .cell.out { font-weight: 600; border: 2px solid var(--c0); padding: 5px 7px; }
+  .view-after .cell.out { border-color: var(--c1); }
+  .view-before .cell.over { background: var(--c0); border-color: var(--c0); color: var(--t0, #fff); }
+  .view-after .cell.moved { background: var(--ok-bg); border: 1px solid var(--ok); padding: 6px 8px; color: var(--ok); z-index: 2; }
+  .view-after .cell.indoors { background: var(--bad-bg); border: 1px solid var(--bad); padding: 6px 8px; color: var(--bad); }
+  .cell.over small, .view-after .cell.moved small, .view-after .cell.indoors small { color: inherit; }
+  .cell.moved, .cell.moved_in { position: relative; z-index: 1; }
+  .cell.past { opacity: 0.45; }
+  .grid-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+  .grid-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; border: 1px solid var(--line); }
+
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+  .pill.clear { background: #1D6B45; color: #D5F2DF; }
+  .pill.alert { background: #8E2A20; color: #FFD9D2; }
+  .pill.neutral { background: #3A423D; color: var(--cream); }
+  .pill.move { background: var(--warn-bg); color: var(--warn); }
+  .pill.indoors { background: var(--bad-bg); color: var(--bad); }
+
+  .heading { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .change { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; gap: 12px; }
+  .change .badge { flex: none; min-width: 46px; height: 46px; padding: 0 6px; border-radius: 12px; background: var(--brand-soft); color: var(--brand);
+    font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  .change .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .change .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .change h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 22px; overflow-wrap: anywhere; }
+  .slots { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+  .slot { display: inline-flex; align-items: center; gap: 6px; background: var(--paper); border-radius: 8px; padding: 5px 9px 5px 8px; }
+  .slot i { width: 9px; height: 9px; border-radius: 50%; }
+  .slot b { font-size: 13px; font-weight: 600; }
+  .slot small { font-size: 12px; color: var(--muted); }
+  .arrow { color: var(--muted); font-size: 16px; }
+  .change .why { margin: 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .change .why.repeat { color: var(--warn); }
+
+  details.ok-row { background: var(--ok-bg); border-radius: 14px; color: var(--ok); }
+  details.ok-row summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; justify-content: space-between; gap: 10px; font-weight: 500; }
+  details.ok-row summary::-webkit-details-marker { display: none; }
+  details.ok-row summary::after { content: "Show"; font-size: 13px; }
+  details.ok-row[open] summary::after { content: "Hide"; }
+  details.ok-row ul { margin: 0; padding: 0 14px 12px; list-style: none; font-size: 13px; color: var(--ink); }
+  details.ok-row li { padding: 6px 0; border-top: 1px solid rgba(29, 107, 69, 0.18); }
+  details.ok-row li span { color: var(--muted); }
+
+  .notes { background: var(--warn-bg); color: var(--warn); border-radius: 14px; padding: 12px 14px; }
+  .notes strong { display: block; margin-bottom: 4px; }
+  .notes ul { margin: 0; padding-left: 18px; }
+  .notes li { margin: 3px 0; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .card.plain { background: transparent; gap: 10px; }
+  .card h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .card p { margin: 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .notice-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .segment { display: flex; gap: 2px; background: var(--paper); border-radius: 10px; padding: 3px; }
+  .segment button { border: 0; background: transparent; border-radius: 8px; padding: 5px 12px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; }
+  .segment button[aria-pressed=true] { background: var(--ink); color: var(--cream); }
+  .notice-text { background: var(--paper); border-radius: 12px; padding: 14px; margin: 0; white-space: pre-wrap; font: 14px/22px var(--sans); overflow-wrap: anywhere; }
+  .notice-text[lang=hi] { line-height: 24px; }
+  .btn { display: block; width: 100%; text-align: center; border-radius: 12px; padding: 13px 16px; font-weight: 600; font-size: 15px; cursor: pointer; border: 1px solid var(--brand); }
+  .btn.primary { background: var(--brand); color: var(--cream); }
+  .btn.outline { background: transparent; color: var(--brand); font-size: 14px; padding: 11px 16px; }
+  .btn:disabled { opacity: 0.55; cursor: default; }
+  .share { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .share .btn { font-size: 14px; padding: 12px 10px; text-decoration: none; }
+
+  form { display: flex; flex-direction: column; gap: 10px; }
+  .input { display: block; }
+  .input span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .input input, .input select { width: 100%; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 9px 11px; }
+  .inline { display: flex; gap: 8px; align-items: flex-end; }
+  .inline .input { flex: 1; min-width: 0; }
+  .inline .btn { width: auto; white-space: nowrap; }
+  .limits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 6px 0; }
+  #staff summary { cursor: pointer; font-size: 14px; }
+  #staff form { margin-top: 10px; }
+  form details summary { cursor: pointer; font-size: 13px; color: var(--brand); font-weight: 500; }
+  form details[open] summary { margin-bottom: 8px; }
+  .file-name { font-size: 13px; color: var(--ink) !important; overflow-wrap: anywhere; }
+  .link { color: var(--brand); font-weight: 500; }
+  .link-btn { border: 0; background: none; padding: 0; color: var(--brand); font-weight: 600; text-decoration: underline; cursor: pointer; }
+  .footnote { margin: 0; font-size: 12px; line-height: 17px; color: var(--muted); }
+  code { font-size: 12px; background: var(--paper); padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <h1 class="wordmark">BreatheWise</h1>
+    <div class="controls">
+      <label class="field"><span>School</span><select id="school"></select></label>
+      <label class="field"><span>Day to plan</span><input type="date" id="date"></label>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="col area-a">
+      <p id="status" class="status" role="status">Loading…</p>
+
+      <nav id="week" class="week" hidden aria-label="School days ahead"></nav>
+
+      <section id="live" class="live" hidden aria-live="polite">
+        <span class="pulse"></span>
+        <div>
+          <div class="eyebrow" id="live-eyebrow"></div>
+          <div class="advice" id="live-advice"></div>
+          <div class="detail" id="live-detail"></div>
+        </div>
+      </section>
+
+      <section id="since" class="notes" hidden>
+        <strong id="since-title"></strong>
+        <ul id="since-list"></ul>
+      </section>
+
+      <section id="hero" class="hero" hidden>
+        <div class="row"><span class="date" id="hero-date"></span><span class="pill" id="hero-pill"></span></div>
+        <h2 id="hero-headline"></h2>
+        <p class="summary" id="hero-summary"></p>
+        <hr>
+        <div class="label">Air through the school day</div>
+        <div class="bars" id="bars"></div>
+        <p class="note" id="hero-note"></p>
+      </section>
+
+      <p id="shortcut" class="footnote" hidden><span id="shortcut-text"></span> <button type="button" class="link-btn" id="shortcut-btn"></button></p>
+    </div>
+
+    <div class="col area-c">
+      <section id="close-calls" class="notes" hidden>
+        <strong id="close-title"></strong>
+        <ul id="close-list"></ul>
+      </section>
+
+      <section id="impact" class="list" hidden>
+        <h2 class="heading">What this plan achieves</h2>
+        <div class="stats" id="stats"></div>
+        <p class="footnote">Moving a class indoors does not give it clean air: outdoor particles get into classrooms too.
+          The gain is that children are not running or exercising, and breathing hardest, in the worst air of the day.</p>
+      </section>
+
+      <section id="load" class="card" hidden>
+        <h2 class="heading">Each class's outdoor day</h2>
+        <div class="bt" id="load-rows"></div>
+        <p class="footnote" id="load-note"></p>
+      </section>
+
+      <section id="backtest" class="card" hidden>
+        <h2 class="heading" id="backtest-title">Tested against last winter</h2>
+        <div class="bt" id="backtest-rows"></div>
+        <p class="footnote" id="backtest-note"></p>
+      </section>
+
+      <section id="grid-card" class="card" hidden>
+        <div class="notice-head">
+          <h2 class="heading">The day's timetable</h2>
+          <div class="segment" id="grid-toggle">
+            <button type="button" id="view-before" aria-pressed="false">As scheduled</button>
+            <button type="button" id="view-after" aria-pressed="true">With the plan</button>
+          </div>
+        </div>
+        <p class="footnote swipe">Swipe sideways to see the whole day.</p>
+        <div class="grid-scroll"><div id="grid" class="grid view-after"></div></div>
+        <div class="grid-legend" id="grid-legend"></div>
+        <p class="footnote" id="grid-rules"></p>
+      </section>
+    </div>
+
+    <div class="col area-d">
+      <section id="notes" class="notes" hidden>
+        <strong>Check how your timetable was read</strong>
+        <ul id="notes-list"></ul>
+      </section>
+
+      <section id="changes-section" class="list" hidden>
+        <h2 class="heading">What to change</h2>
+        <div class="list" id="changes"></div>
+      </section>
+
+      <details id="ok-row" class="ok-row" hidden>
+        <summary id="ok-summary"></summary>
+        <ul id="ok-list"></ul>
+      </details>
+    </div>
+
+    <div class="col area-b">
+      <section id="notice-card" class="card" hidden>
+        <div class="notice-head">
+          <h2 class="heading">Notice for parents</h2>
+          <div class="segment">
+            <button type="button" id="lang-en" aria-pressed="true">English</button>
+            <button type="button" id="lang-hi" aria-pressed="false">हिंदी</button>
+          </div>
+        </div>
+        <pre class="notice-text" id="notice"></pre>
+        <div class="share">
+          <button type="button" class="btn primary" id="copy">Copy notice</button>
+          <a class="btn outline" id="whatsapp" target="_blank" rel="noopener">Share on WhatsApp</a>
+        </div>
+        <p id="notice-source"></p>
+      </section>
+    </div>
+
+    <div class="col area-e">
+      <section class="card plain">
+        <h3>Use your own timetable</h3>
+        <p>Upload a CSV with one row per period and the columns <code>day, class, start, end, activity, outdoor</code>, and optionally <code>teacher</code>.
+          It is used for this plan only and is not saved. <a class="link" id="sample" download="breathewise-sample-timetable.csv" href="#">Download a sample</a>.</p>
+        <form id="upload">
+          <label class="input"><span>School name</span><input type="text" id="u-name" maxlength="80" placeholder="e.g. Sunrise Public School"></label>
+          <div class="inline">
+            <label class="input"><span>City or area of the school</span><input type="text" id="u-place" placeholder="e.g. Gurugram" required></label>
+            <button type="button" class="btn outline" id="u-find">Find</button>
+          </div>
+          <label class="input" id="u-results-wrap" hidden><span>Pick the right place</span><select id="u-results"></select></label>
+          <details>
+            <summary>Set your school's AQI limits</summary>
+            <div class="limits">
+              <label class="input"><span>Junior classes up to</span><input type="number" id="u-grade" min="0" max="12" value="5"></label>
+              <label class="input"><span>Junior limit</span><input type="number" id="u-primary" min="0" max="500" value="200"></label>
+              <label class="input"><span>Senior limit</span><input type="number" id="u-senior" min="0" max="500" value="200"></label>
+              <label class="input"><span>Classes outdoors at once</span><input type="number" id="u-ground" min="1" max="20" placeholder="as timetabled"></label>
+            </div>
+            <label class="input"><span>Children with asthma, by class (for example 7B:2, 3A:1)</span><input type="text" id="u-asthma" maxlength="300" placeholder="none"></label>
+            <div class="limits" style="margin-top:8px">
+              <label class="input"><span>Limit for those classes</span><input type="number" id="u-asthma-limit" min="0" max="500" value="150"></label>
+            </div>
+            <label class="check"><input type="checkbox" id="u-last"> Never move an outdoor period into a class's last period</label>
+            <label class="check"><input type="checkbox" id="u-b2b"> Never give a teacher outdoor periods back to back</label>
+            <p>The default of 200 is the top of the national AQI's "Moderate" band; "Poor" starts at 201. Set both limits to 0 if outdoor sport is suspended by order.</p>
+          </details>
+          <input type="file" id="u-file" accept=".csv,text/csv,text/plain" hidden>
+          <button type="button" class="btn outline" id="u-choose">Choose CSV file</button>
+          <p class="file-name" id="u-file-name" hidden></p>
+          <button type="submit" class="btn primary" id="u-submit">Check this timetable</button>
+          <p id="u-error" class="status error" hidden></p>
+        </form>
+      </section>
+
+      <section class="card plain" id="staff">
+        <details>
+          <summary><b>School settings</b> (staff only)</summary>
+          <form id="staff-open">
+            <label class="input"><span>Staff passcode</span><input type="password" id="s-pass" autocomplete="off" required></label>
+            <button type="submit" class="btn outline">Open settings</button>
+          </form>
+          <form id="staff-form" hidden>
+            <div class="limits">
+              <label class="input"><span>Junior classes up to</span><input type="number" id="s-grade" min="0" max="12"></label>
+              <label class="input"><span>Junior limit</span><input type="number" id="s-primary" min="0" max="500"></label>
+              <label class="input"><span>Senior limit</span><input type="number" id="s-senior" min="0" max="500"></label>
+              <label class="input"><span>Asthma limit</span><input type="number" id="s-asthma-limit" min="0" max="500"></label>
+              <label class="input"><span>Forecast margin</span><input type="number" id="s-margin" min="0" max="200"></label>
+              <label class="input"><span>Classes outdoors at once (0: as timetabled)</span><input type="number" id="s-ground" min="0" max="20"></label>
+              <label class="input"><span>Daily outdoor allowance, minutes at the limit (0: off)</span><input type="number" id="s-daily" min="0" max="500"></label>
+              <label class="input"><span>Students per class</span><input type="number" id="s-per-class" min="0" max="500"></label>
+            </div>
+            <label class="input"><span>Children with asthma, by class (7B:2, 3A:1)</span><input type="text" id="s-asthma" maxlength="300"></label>
+            <label class="check"><input type="checkbox" id="s-last"> Never move an outdoor period into a class's last period</label>
+            <label class="check"><input type="checkbox" id="s-b2b"> Never give a teacher outdoor periods back to back</label>
+            <label class="input"><span>Replace the timetable (optional CSV)</span><input type="file" id="s-file" accept=".csv,text/csv,text/plain"></label>
+            <button type="submit" class="btn primary">Save settings</button>
+          </form>
+          <p id="s-msg" class="footnote" role="status"></p>
+        </details>
+      </section>
+
+      <p class="footnote">Air data: Open-Meteo, a modelled forecast updated through the day, not a sensor at the school.
+        AQI values are hourly estimates on India's national scale; the official AQI uses 24-hour averages.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const COLORS = { "Good": "--aqi-good", "Satisfactory": "--aqi-satisfactory", "Moderate": "--aqi-moderate",
+                 "Poor": "--aqi-poor", "Very Poor": "--aqi-very-poor", "Severe": "--aqi-severe" };
+const CATEGORY_LIMITS = [[50, "Good"], [100, "Satisfactory"], [200, "Moderate"], [300, "Poor"], [400, "Very Poor"], [500, "Severe"]];
+const REFRESH_MS = 15 * 60 * 1000;   // the air data itself only changes hourly
+const EXAMPLE_DATE = "2025-11-18";
+let current = null, lang = "en", uploaded = null, place = null;
+
+const aqiColor = aqi => `var(${COLORS[(CATEGORY_LIMITS.find(c => aqi <= c[0]) || CATEGORY_LIMITS[5])[1]]})`;
+const hh = hour => String(hour).padStart(2, "0") + ":00";
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+async function api(path, options) {
+  const res = await fetch(path, options);
+  const data = await res.json().catch(() => ({ error: "The server sent an unreadable reply." }));
+  if (!res.ok) throw new Error(data.error || "Something went wrong.");
+  return data;
+}
+
+function setStatus(text, isError) {
+  $("status").textContent = text;
+  $("status").className = "status" + (isError ? " error" : "");
+  $("status").hidden = !text;
+}
+
+const who = a => a.class === "ALL" ? "Whole school" : "Class " + a.class;
+
+function slot(time, aqi) {
+  const node = el("span", "slot");
+  const dot = el("i"); dot.style.background = aqiColor(aqi);
+  node.append(dot, el("b", null, time), el("small", null, "AQI " + aqi));
+  return node;
+}
+
+let current_other_days = 0;
+function changeCard(a) {
+  const card = el("article", "change");
+  card.append(el("div", "badge", a.class === "ALL" ? "All" : a.class));
+  const body = el("div", "body");
+  const titleRow = el("div", "title-row");
+  titleRow.append(el("h3", null, a.activity), el("span", "pill " + (a.action === "swap" ? "move" : "indoors"), a.action === "swap" ? "Move" : "Indoors"));
+  const slots = el("div", "slots");
+  slots.append(slot(a.start, a.aqi));
+  let why;
+  if (a.action === "swap") {
+    slots.append(el("span", "arrow", "→"), slot(a.swap_with.start, a.swap_with.aqi));
+    why = `${a.swap_with.activity} takes the ${a.start} slot. Limit for this class: ${a.limit}.`;
+  } else {
+    const reasons = {
+      in_progress: "It is happening now, so bring students inside.",
+      whole_school: "It is a whole-school event, so it cannot be moved.",
+      ground_full: "The clean slots that day already have a class on the ground.",
+      teacher_busy: "In the clean slots, one of the teachers is teaching another class.",
+      last_period: "The only clean slot is the last period of the day, which your rules keep indoors.",
+      back_to_back: "A move would give the teacher outdoor periods back to back.",
+      no_clean_slot: "No free slot that day is clean enough.",
+    };
+    why = a.reason === "daily_budget"
+      ? `Within the limit of ${a.limit} as one period, but with it this class would go over its outdoor allowance for the day. Hold it indoors as a light activity.`
+      : a.reason === "daily_budget_after_move"
+      ? `Over the limit of ${a.limit}, and the clean slot it could move to would take this class over its outdoor allowance for the day. Hold it indoors as a light activity.`
+      : `Over the limit of ${a.limit}. ${reasons[a.reason] || reasons.no_clean_slot} Hold it indoors as a light activity.`;
+  }
+  if (a.asthma) why += ` The limit is ${a.limit} because ${a.asthma} ${a.asthma === 1 ? "child" : "children"} in ${a.class === "ALL" ? "the school" : "this class"} ${a.asthma === 1 ? "has" : "have"} asthma.`;
+  body.append(titleRow, slots, el("p", "why", why));
+  // Only speak up when the same change is needed on every other day we can see, so the hint stays rare.
+  if (a.also_on && a.also_on === current_other_days) body.append(el("p", "why repeat",
+    `Needed on all ${current_other_days + 1} school days ahead. Make it a standing change for the week instead of deciding daily.`));
+  card.append(body);
+  return card;
+}
+
+const mm = minutes => String(Math.floor(minutes / 60)).padStart(2, "0") + ":" + String(minutes % 60).padStart(2, "0");
+
+function renderWeek(plan) {
+  $("week").hidden = plan.week.length < 2;
+  $("week").replaceChildren(...plan.week.map(d => {
+    const day = new Date(d.date + "T00:00:00");
+    const button = el("button");
+    button.type = "button";
+    button.setAttribute("aria-current", d.date === plan.date);
+    const clear = d.verdict === "clear";
+    const state = el("span", "state " + (clear ? "clear" : "alert"));
+    state.append(el("i"), clear ? "All clear" : `${d.changes} ${d.changes === 1 ? "change" : "changes"}`);
+    button.append(el("span", "day", day.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })), state);
+    button.title = `Peak AQI in school hours: about ${d.peak_aqi}`;
+    button.addEventListener("click", () => load(d.date));
+    return button;
+  }));
+}
+
+function stat(big, small, text) {
+  const tile = el("div", "stat");
+  const number = el("b", null, big);
+  if (small) number.append(el("span", null, small));
+  tile.append(number, el("p", null, text));
+  return tile;
+}
+
+function renderImpact(plan) {
+  const i = plan.impact;
+  $("impact").hidden = !i;
+  if (!i) return;
+  const people = i.student_minutes_avoided != null;
+  $("stats").replaceChildren(
+    stat((people ? i.student_minutes_avoided : i.minutes_over_limit_avoided).toLocaleString("en-IN"), people ? " student-min" : " min",
+         "of outdoor activity in air over your limit, avoided"),
+    stat(String(i.outdoor_minutes_kept), " min",
+         i.outdoor_minutes_kept ? "of outdoor activity still goes ahead, in hours within your limit" : "of outdoor activity can go ahead: no school hour is clean enough"),
+    i.worst_aqi_avoided == null
+      ? stat(String(i.held_for_daily_allowance), "", "outdoor periods held back to keep a class within its daily allowance")
+      : stat("AQI " + i.worst_aqi_avoided, "", "the worst air children would have been active in"));
+}
+
+let gridKey = null, gridTimer = null;
+const calmMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Switch the timetable between "as scheduled" and "with the plan". Moved lessons slide to their new slot.
+function setGridView(after, animate) {
+  const grid = $("grid");
+  const cells = [...grid.querySelectorAll(".cell")];
+  const from = animate && !calmMotion() ? cells.map(c => c.getBoundingClientRect().left) : null;
+  grid.classList.toggle("view-after", after);
+  grid.classList.toggle("view-before", !after);
+  for (const c of cells) c.style.gridColumn = after ? c.dataset.after : c.dataset.before;
+  $("view-after").setAttribute("aria-pressed", after);
+  $("view-before").setAttribute("aria-pressed", !after);
+  if (from) cells.forEach((c, i) => {
+    const dx = from[i] - c.getBoundingClientRect().left;
+    if (dx) c.animate([{ transform: `translateX(${dx}px)` }, { transform: "none" }], { duration: 900, easing: "cubic-bezier(0.4, 0, 0.2, 1)" });
+  });
+}
+
+function renderGrid(plan) {
+  const g = plan.grid;
+  $("grid-card").hidden = !g;
+  if (!g) return;
+  // Columns are the day's time slots: every time a period starts or ends is a column edge.
+  const edges = [...new Set(g.rows.flatMap(r => r.periods.flatMap(p => [p.start, p.end])))].sort((a, b) => a - b);
+  const span = (start, end) => `${edges.indexOf(start) + 2} / ${edges.indexOf(end) + 2}`;   // column 1 holds the class names
+  const classRows = g.rows.filter(r => r.class !== "ALL");
+  const whole = g.rows.find(r => r.class === "ALL");
+  // A whole-school event is drawn across every class when no class has a lesson at that time.
+  const clashes = p => classRows.some(r => r.periods.some(q => q.start < p.end && p.start < q.end));
+  const tall = whole && classRows.length && !whole.periods.some(clashes);
+  const rows = tall ? classRows : g.rows;
+
+  const nodes = [];
+  for (let i = 0; i < edges.length - 1; i++) {
+    const hours = plan.hours.filter(h => h.hour * 60 < edges[i + 1] && edges[i] < h.hour * 60 + 60);
+    const head = el("div", "slot", mm(edges[i]));
+    head.style.gridArea = `1 / ${i + 2}`;
+    if (hours.length) {
+      const aqi = Math.max(...hours.map(h => h.aqi));
+      const chip = el("span", "chip", "AQI " + aqi);
+      chip.style.background = aqiColor(aqi);
+      chip.style.color = aqi > 300 ? "#fff" : "var(--ink)";
+      head.append(chip);
+    }
+    nodes.push(head);
+  }
+  const cell = (p, klass, gridRow) => {
+    const node = el("div", "cell");
+    node.style.gridRow = gridRow;
+    node.dataset.before = span(p.start, p.end);
+    node.dataset.after = span(p.after_start, p.after_end);
+    if (p.outdoor) {
+      node.classList.add("out");
+      if (p.aqi != null) node.style.setProperty("--c0", aqiColor(p.aqi));
+      if (p.aqi != null && p.aqi <= 300) node.style.setProperty("--t0", "var(--ink)");   // white is too faint on orange and yellow
+      if (p.after_aqi != null) node.style.setProperty("--c1", aqiColor(p.after_aqi));
+      if (p.change) node.classList.add("over");
+    }
+    if (p.change) node.classList.add(p.change);
+    if (p.past) node.classList.add("past");
+    const everyone = klass === "ALL";
+    const before = !p.outdoor ? "" : p.change ? "Outdoor, over your limit" : everyone ? "Whole school, outdoor" : "Outdoor";
+    const after = p.change === "indoors" ? (everyone ? "Whole school, held indoors" : "Held indoors")
+                : p.change === "moved" ? "Moved here" : p.change === "moved_in" ? "Swapped" : before;
+    node.append(el("span", null, p.activity), el("small", "t0", before), el("small", "t1", after));
+    node.title = `${everyone ? "Whole school" : "Class " + klass}: ${p.activity}, ${mm(p.start)}–${mm(p.end)}` +
+      (p.change === "moved" || p.change === "moved_in" ? `, moves to ${mm(p.after_start)}–${mm(p.after_end)}` : "") +
+      (p.change === "indoors" ? ", held indoors" : "") + (p.outdoor && p.aqi != null ? ` (AQI ${p.aqi})` : "");
+    return node;
+  };
+  rows.forEach((row, r) => {
+    const label = el("div", "klass", row.class === "ALL" ? "All" : row.class);
+    label.style.gridArea = `${r + 2} / 1`;
+    nodes.push(label, ...row.periods.map(p => cell(p, row.class, String(r + 2))));
+  });
+  if (tall) nodes.push(...whole.periods.map(p => cell(p, "ALL", `2 / ${rows.length + 2}`)));
+
+  const grid = $("grid");
+  grid.style.gridTemplateColumns = `40px repeat(${edges.length - 1}, minmax(0, 1fr))`;
+  grid.style.minWidth = 40 + (edges.length - 1) * 88 + "px";   // narrower than this and the card scrolls sideways
+  grid.style.gridTemplateRows = `auto repeat(${rows.length}, 58px)`;
+  grid.replaceChildren(...nodes);
+
+  const legend = [["Indoor lesson", "var(--card)", "var(--line)"], ["Outdoor", "var(--card)", "var(--aqi-moderate)"],
+                  ["Outdoor, over your limit", "var(--aqi-very-poor)", "var(--aqi-very-poor)"],
+                  ["Moved to cleaner air", "var(--ok-bg)", "var(--ok)"], ["Held indoors", "var(--bad-bg)", "var(--bad)"]];
+  const swapNote = el("span", null, "“Swapped” marks the indoor lesson that gave up its slot.");
+  const t = plan.thresholds;
+  const rules = [`at most ${plan.max_outdoor_classes} ${plan.max_outdoor_classes === 1 ? "class" : "classes"} on the ground at a time`,
+                 `a class only moves into air at least ${t.forecast_margin} under its limit`,
+                 plan.has_teachers ? "no teacher is double-booked" : "teachers are not checked (add a teacher column)"];
+  if (t.avoid_last_period) rules.push("no outdoor period moves into the last period");
+  if (t.avoid_back_to_back && plan.has_teachers) rules.push("no teacher gets outdoor periods back to back");
+  $("grid-rules").textContent = "Moves follow these rules: " + rules.join("; ") + ".";
+  $("grid-legend").replaceChildren(...legend.slice(0, plan.changes ? 5 : 2).map(([label, color, edge]) => {
+    const item = el("span"); const swatch = el("i");
+    swatch.style.background = color; swatch.style.borderColor = edge;
+    item.append(swatch, label);
+    return item;
+  }), ...(plan.changes ? [swapNote] : []));
+  $("grid-toggle").hidden = !plan.changes;
+
+  // On a newly opened day with changes, show the schedule first and then slide into the plan.
+  const key = plan.school + plan.date;
+  const fresh = key !== gridKey;
+  gridKey = key;
+  if (fresh) grid.dataset.after = "1";
+  clearTimeout(gridTimer);
+  if (fresh && plan.changes && !calmMotion()) {
+    setGridView(false, false);
+    gridTimer = setTimeout(() => setGridView(true, true), 1100);
+  } else {
+    setGridView(fresh || !plan.changes ? true : grid.dataset.after !== "0", false);
+  }
+}
+
+function renderLoad(plan) {
+  const rows = plan.load || [];
+  $("load").hidden = !rows.length;
+  if (!rows.length) return;
+  const top = Math.max(100, ...rows.map(r => r.percent_timetabled));
+  const meter = (label, percent) => {
+    const m = el("div", "meter"); m.dataset.label = label;
+    const track = el("div", "track"); const bar = el("i");
+    bar.style.width = (100 * percent / top).toFixed(1) + "%";
+    bar.style.background = percent > 100 ? "var(--aqi-very-poor)" : "var(--ok)";
+    track.append(bar); m.append(track, el("span", "num", percent + "%" + (percent > 100 ? " over" : "")));
+    return m;
+  };
+  const cells = [el("div", "head", ""), el("div", "head", "As timetabled"), el("div", "head", "With the plan")];
+  for (const r of rows) cells.push(el("div", "name", "Class " + r.class), meter("As timetabled", r.percent_timetabled), meter("With the plan", r.percent_planned));
+  $("load-rows").replaceChildren(...cells);
+  const minutes = plan.thresholds.daily_outdoor_minutes;
+  $("load-note").textContent = `Share of the day's outdoor allowance used: minutes outdoors weighted by the air at the time, where 100% is ${minutes} minutes at the class's limit. ` +
+    "A class can pass every period and still go over; its heaviest outdoor period is then held indoors. The allowance is the school's setting; there is no official figure.";
+}
+
+let backtestKey = null;
+async function loadBacktest() {
+  const mine = $("school").value === "__uploaded" && uploaded;
+  const key = mine ? JSON.stringify(uploaded) : $("school").value;
+  if (key === backtestKey) return;
+  backtestKey = key;
+  $("backtest").hidden = true;
+  try {
+    const b = mine
+      ? await api("/api/backtest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(uploaded) })
+      : await api("/api/backtest?" + new URLSearchParams({ school: key }));
+    if (key !== backtestKey || !b.scheduled_outdoor_minutes) return;
+    const day = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    $("backtest-title").textContent = `Tested against last winter: ${day(b.from)} to ${day(b.to)}, ${b.school_days} school days`;
+    const hours = minutes => Math.round(minutes / 60).toLocaleString("en-IN") + " h";
+    const meter = (label, minutes, color) => {
+      const m = el("div", "meter"); m.dataset.label = label;
+      const track = el("div", "track"); const bar = el("i");
+      bar.style.width = (100 * minutes / b.scheduled_outdoor_minutes).toFixed(1) + "%"; bar.style.background = color;
+      track.append(bar); m.append(track, el("span", "num", hours(minutes)));
+      return m;
+    };
+    const cells = [el("div", "head", ""), el("div", "head", "Outdoor activity in air over your limit"), el("div", "head", "Outdoor activity that still happens")];
+    for (const s of b.strategies) {
+      cells.push(el("div", "name" + (s.key === "breathewise" ? " ours" : ""), s.label),
+                 meter("Over your limit", s.over_limit_minutes, "var(--aqi-very-poor)"),
+                 meter("Still happens", s.outdoor_minutes, "var(--ok)"));
+    }
+    $("backtest-rows").replaceChildren(...cells);
+    $("backtest-note").textContent =
+      `Class-hours of outdoor activity, out of ${hours(b.scheduled_outdoor_minutes)} timetabled. The noon rule was wrong on ${b.days_noon_rule_wrong} of ${b.school_days} days: ` +
+      `it cancelled ${hours(b.noon_rule_needless_minutes)} that were within your limit, and still left afternoon activity in bad air. ` +
+      `BreatheWise needed changes on ${b.days_with_changes} days. All three are scored on the air model's record of each day; BreatheWise also planned from that record, ` +
+      "so its zero is a best case and a real forecast would do somewhat worse.";
+    $("backtest").hidden = false;
+  } catch { /* the comparison is extra: the plan stands without it */ }
+}
+
+function quietItem(a) {
+  const li = el("li");
+  const state = { ok: `AQI ${a.aqi}, limit ${a.limit}`, past: "already finished", unknown: "no air data for this time" }[a.action];
+  li.append(`${who(a)}: ${a.activity}, ${a.start}–${a.end} `, el("span", null, `(${state})`));
+  if (a.borderline) li.append(el("b", null, " Close to your limit: check the live reading before going out."));
+  else if (a.sensitive) li.append(" Light activity only for children with asthma.");
+  return li;
+}
+
+function render(plan) {
+  current = plan;
+  const day = new Date(plan.date + "T00:00:00");
+  $("date").value = plan.date;
+
+  $("live").hidden = !plan.live;
+  if (plan.live) {
+    $("live").className = "live " + plan.live.level;
+    $("live-eyebrow").textContent = `Right now · ${plan.live.time}`;
+    $("live-advice").textContent = plan.live.advice;
+    $("live-detail").textContent = `Current AQI about ${plan.live.aqi} (${plan.live.category}). Air data updates hourly.`;
+  }
+
+  current_other_days = plan.other_days || 0;
+  renderWeek(plan);
+  renderImpact(plan);
+  const since = plan.since_last_plan;
+  $("since").hidden = !(since && since.changes.length);
+  if (since && since.changes.length) {
+    const sent = new Date(since.made_at).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+    $("since-title").textContent = `Changed since the plan sent to staff (${sent}): the air data has moved.`;
+    $("since-list").replaceChildren(...since.changes.map(c => el("li", null,
+      `${c.class === "ALL" ? "Whole school" : "Class " + c.class}: ${c.activity}, ${c.start}–${c.end}. Was “${c.was}”, now “${c.now}” (AQI ${c.aqi_was} then, ${c.aqi_now} now).`)));
+  }
+  renderLoad(plan);
+  const close = plan.actions.filter(a => a.borderline);
+  $("close-calls").hidden = !close.length;
+  $("close-title").textContent = `${close.length} ${close.length === 1 ? "decision is" : "decisions are"} close to your limit. ` +
+    (plan.data_kind === "forecast" ? "A forecast this near the line could go either way: check the live reading before going out."
+                                   : "Air this near the line can tip over: check the reading before going out.");
+  $("close-list").replaceChildren(...close.map(a =>
+    el("li", null, `${who(a)}: ${a.activity}, ${a.start}–${a.end}. AQI ${a.aqi} against a limit of ${a.limit}.`)));
+  renderGrid(plan);
+
+  $("hero").hidden = false;
+  $("hero-date").textContent = (plan.is_today ? "Today · " : "") +
+    day.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  const pill = { clear: ["clear", "All clear"], no_school: ["neutral", "No classes"] }[plan.verdict] || ["alert", "Changes needed"];
+  $("hero-pill").className = "pill " + pill[0];
+  $("hero-pill").textContent = pill[1];
+  $("hero-headline").textContent = plan.has_outdoor || !plan.is_school_day ? plan.headline : "No outdoor activities are scheduled on this day.";
+  $("hero-summary").textContent = plan.worst_hour
+    ? `Air is worst at ${hh(plan.worst_hour.hour)} (AQI ${plan.worst_hour.aqi}) and cleanest at ${hh(plan.cleanest_hour.hour)} (AQI ${plan.cleanest_hour.aqi}).`
+    : "";
+  const nowHour = plan.live ? Number(plan.live.time.slice(0, 2)) : null;
+  const long = plan.hours.length > 8;   // long days: short hour labels, and the row scrolls if needed
+  $("bars").className = "bars" + (long ? " long" : "");
+  $("bars").replaceChildren(...plan.hours.map(h => {
+    const col = el("div", "hour" + (h.hour === nowHour ? " current" : ""));
+    const bar = el("div", "bar");
+    bar.style.height = Math.round(14 + Math.min(h.aqi, 500) / 400 * 92) + "px";
+    bar.style.background = `var(${COLORS[h.category]})`;
+    bar.title = h.category;
+    col.append(el("div", "value", h.aqi), bar, el("div", "time", h.hour === nowHour ? "now" : long ? String(h.hour).padStart(2, "0") : hh(h.hour)));
+    return col;
+  }));
+  const t = plan.thresholds;
+  const limits = t.primary_limit === t.senior_limit ? `Your limit: AQI ${t.primary_limit}`
+    : `Your limits: ${t.primary_limit} for classes up to ${t.primary_max_grade}, ${t.senior_limit} for older classes`;
+  const kind = { forecast: "Forecast, so it can be off", live: "Latest modelled values", archive: "The air model's record of this past day" }[plan.data_kind];
+  $("hero-note").textContent = `${kind}. Estimated hourly AQI. ${limits}` +
+    (t.forecast_margin && plan.data_kind !== "live" ? `; classes are only moved into hours at least ${t.forecast_margin} below it.` : ".");
+
+  // On a clean day there is nothing to change, so offer a real past bad-air day to see the plan in action.
+  const replaying = plan.date === EXAMPLE_DATE;
+  $("shortcut").hidden = false;   // always offer the replay, whatever today's air is like
+  $("shortcut-text").textContent = replaying ? "Replay of a real bad-air day, using the air model's record of it, not the forecast from the evening before."
+    : plan.verdict === "clear" ? "Clean air on this day, so there is nothing to move." : "This is the live forecast for the day shown.";
+  $("shortcut-btn").textContent = replaying ? "Back to today" : "See a bad-air day (18 Nov 2025)";
+  $("shortcut-btn").onclick = () => load(replaying ? null : EXAMPLE_DATE);
+
+  $("notes").hidden = !plan.timetable_notes.length;
+  $("notes-list").replaceChildren(...plan.timetable_notes.map(n => el("li", null, n)));
+
+  const changes = plan.actions.filter(a => a.action === "swap" || a.action === "indoors");
+  $("changes-section").hidden = !changes.length;
+  $("changes").replaceChildren(...changes.map(changeCard));
+
+  const quiet = plan.actions.filter(a => a.action !== "swap" && a.action !== "indoors");
+  const okCount = quiet.filter(a => a.action === "ok").length;
+  $("ok-row").hidden = !quiet.length;
+  $("ok-summary").textContent = okCount === quiet.length
+    ? `${okCount} outdoor ${okCount === 1 ? "activity runs" : "activities run"} as scheduled` +
+      (plan.borderline ? `, ${plan.borderline} close to your limit` : plan.sensitive ? "; light activity for children with asthma" : "")
+    : `${okCount} outdoor ${okCount === 1 ? "activity" : "activities"} can run; ${quiet.length - okCount} finished or without data`;
+  $("ok-list").replaceChildren(...quiet.map(quietItem));
+
+  $("notice-card").hidden = false;
+  showNotice();
+}
+
+function showNotice() {
+  if (!current) return;
+  $("notice").textContent = current.notice[lang];
+  $("notice").lang = lang;
+  $("whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(current.notice[lang]);
+  $("lang-en").setAttribute("aria-pressed", lang === "en");
+  $("lang-hi").setAttribute("aria-pressed", lang === "hi");
+  $("notice-source").textContent = current.notice.source === "bedrock"
+    ? "Wording by Amazon Bedrock from the plan. Read it before sending."
+    : "Standard template wording. Read it before sending.";
+}
+
+function hidePlan() {
+  for (const id of ["week", "live", "since", "hero", "close-calls", "impact", "load", "backtest", "grid-card", "shortcut", "notes", "changes-section", "ok-row", "notice-card"]) $(id).hidden = true;
+  current = null;
+}
+
+async function load(date, quiet) {
+  if (!quiet) setStatus("Checking the air against the timetable…");
+  try {
+    let plan;
+    if ($("school").value === "__uploaded" && uploaded) {
+      plan = await api("/api/plan", { method: "POST", headers: { "content-type": "application/json" },
+                                      body: JSON.stringify({ ...uploaded, date: date || undefined }) });
+    } else {
+      const query = new URLSearchParams({ school: $("school").value });
+      if (date) query.set("date", date);
+      plan = await api("/api/plan?" + query);
+    }
+    render(plan);
+    setStatus("");
+    loadBacktest();
+    return true;
+  } catch (err) {
+    if (!quiet) { hidePlan(); setStatus(err.message, true); }
+    return false;
+  }
+}
+
+$("school").addEventListener("change", () => load(null));
+$("date").addEventListener("change", () => load($("date").value || null));
+$("view-before").addEventListener("click", () => { clearTimeout(gridTimer); $("grid").dataset.after = "0"; setGridView(false, true); });
+$("view-after").addEventListener("click", () => { clearTimeout(gridTimer); $("grid").dataset.after = "1"; setGridView(true, true); });
+$("lang-en").addEventListener("click", () => { lang = "en"; showNotice(); });
+$("lang-hi").addEventListener("click", () => { lang = "hi"; showNotice(); });
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("notice").textContent); $("copy").textContent = "Copied"; }
+  catch { $("copy").textContent = "Select the text and copy"; }
+  setTimeout(() => { $("copy").textContent = "Copy notice"; }, 1500);
+});
+setInterval(() => { if (current && current.is_today && !document.hidden) load(null, true); }, REFRESH_MS);
+
+// Upload form
+function uploadError(text) { $("u-error").textContent = text; $("u-error").hidden = !text; }
+
+async function findPlace() {
+  const query = $("u-place").value.trim();
+  if (!query) return uploadError("Type the city or area first.");
+  uploadError("");
+  $("u-find").disabled = true;
+  try {
+    const res = await fetch("https://geocoding-api.open-meteo.com/v1/search?count=6&language=en&format=json&name=" + encodeURIComponent(query));
+    const results = (await res.json()).results || [];
+    if (!results.length) { place = null; $("u-results-wrap").hidden = true; return uploadError("No place found with that name. Try the nearest city."); }
+    $("u-results").replaceChildren(...results.map(r => {
+      const option = el("option", null, [r.name, r.admin1, r.country].filter(Boolean).join(", "));
+      option.value = r.latitude + "," + r.longitude;
+      return option;
+    }));
+    $("u-results-wrap").hidden = false;
+    pickPlace();
+  } catch { uploadError("Could not look up that place. Check your connection and try again."); }
+  finally { $("u-find").disabled = false; }
+}
+function pickPlace() { const [lat, lon] = $("u-results").value.split(",").map(Number); place = { lat, lon }; }
+
+$("u-find").addEventListener("click", findPlace);
+$("u-place").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); findPlace(); } });
+$("u-place").addEventListener("input", () => { place = null; $("u-results-wrap").hidden = true; });
+$("u-results").addEventListener("change", pickPlace);
+$("u-choose").addEventListener("click", () => $("u-file").click());
+$("u-file").addEventListener("change", () => {
+  const file = $("u-file").files[0];
+  $("u-file-name").textContent = file ? "Selected: " + file.name : "";
+  $("u-file-name").hidden = !file;
+});
+$("sample").href = "data:text/csv;charset=utf-8," + encodeURIComponent(
+  "day,class,start,end,activity,outdoor,teacher\nmon-sat,ALL,07:40,08:00,Morning assembly,yes,\nmon,3A,08:00,08:40,PT,yes,Mr Rao\nmon,3A,08:40,09:20,English,no,Mr Thomas\n" +
+  "mon,3A,12:30,13:10,Maths,no,Ms Iyer\nmon,7B,08:40,09:20,PT,yes,Mr Rao\nmon,7B,13:10,13:50,Hindi,no,Ms Sharma\n");
+
+$("upload").addEventListener("submit", async event => {
+  event.preventDefault();
+  uploadError("");
+  const file = $("u-file").files[0];
+  if (!file) return uploadError("Choose your timetable CSV file first.");
+  if (file.size > 150000) return uploadError("That file is too large for a timetable (over 150 KB). Upload a CSV with one row per period.");
+  if (!place) { await findPlace(); if (!place) return; }
+  $("u-submit").disabled = true;
+  try {
+    uploaded = {
+      name: $("u-name").value.trim() || "Your school", lat: place.lat, lon: place.lon, csv: await file.text(),
+      thresholds: { primary_max_grade: $("u-grade").value, primary_limit: $("u-primary").value, senior_limit: $("u-senior").value,
+                    max_outdoor_classes: $("u-ground").value, asthma_limit: $("u-asthma-limit").value,
+                    avoid_last_period: $("u-last").checked ? 1 : 0, avoid_back_to_back: $("u-b2b").checked ? 1 : 0 },
+      asthma: Object.fromEntries($("u-asthma").value.split(/[,;]+/).map(x => x.trim()).filter(Boolean).map(x => x.split(/[:=\s]+/))),
+    };
+    let option = $("school").querySelector('option[value="__uploaded"]');
+    if (!option) { option = el("option"); option.value = "__uploaded"; $("school").append(option); }
+    option.textContent = uploaded.name + " (your upload)";
+    $("school").value = "__uploaded";
+    if (await load(null)) window.scrollTo({ top: 0, behavior: "smooth" });
+    else { uploadError($("status").textContent); }
+  } finally { $("u-submit").disabled = false; }
+});
+
+// Staff settings. The passcode is sent in the request body only, never in the address.
+const staffCall = (path, extra) => api("/api/settings/" + path, { method: "POST", headers: { "content-type": "application/json" },
+  body: JSON.stringify({ school: $("school").value, passcode: $("s-pass").value, ...extra }) });
+const pairs = text => Object.fromEntries(text.split(/[,;]+/).map(x => x.trim()).filter(Boolean).map(x => x.split(/[:=\s]+/)));
+
+$("staff-open").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("s-msg").className = "footnote"; $("s-msg").textContent = "Checking…";
+  try {
+    const { settings, periods } = await staffCall("read", {});
+    const t = settings.thresholds;
+    $("s-grade").value = t.primary_max_grade; $("s-primary").value = t.primary_limit; $("s-senior").value = t.senior_limit;
+    $("s-asthma-limit").value = t.asthma_limit; $("s-margin").value = t.forecast_margin; $("s-ground").value = t.max_outdoor_classes;
+    $("s-daily").value = t.daily_outdoor_minutes; $("s-per-class").value = (settings.students || {}).per_class ?? "";
+    $("s-asthma").value = Object.entries(settings.asthma || {}).map(([k, v]) => `${k}:${v}`).join(", ");
+    $("s-last").checked = !!t.avoid_last_period; $("s-b2b").checked = !!t.avoid_back_to_back;
+    $("staff-form").hidden = false; $("staff-open").hidden = true;
+    $("s-msg").textContent = `${settings.name}: ${periods} periods in the timetable.`;
+  } catch (err) { $("s-msg").className = "status error"; $("s-msg").textContent = err.message; }
+});
+
+$("staff-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("s-msg").className = "footnote"; $("s-msg").textContent = "Saving…";
+  try {
+    const file = $("s-file").files[0];
+    if (file && file.size > 150000) throw new Error("That file is too large for a timetable (over 150 KB).");
+    const settings = {
+      thresholds: { primary_max_grade: $("s-grade").value, primary_limit: $("s-primary").value, senior_limit: $("s-senior").value,
+                    asthma_limit: $("s-asthma-limit").value, forecast_margin: $("s-margin").value, max_outdoor_classes: $("s-ground").value,
+                    daily_outdoor_minutes: $("s-daily").value, avoid_last_period: $("s-last").checked ? 1 : 0, avoid_back_to_back: $("s-b2b").checked ? 1 : 0 },
+      asthma: pairs($("s-asthma").value),
+    };
+    if ($("s-per-class").value !== "") settings.students = { ...((current && current.students) || {}), per_class: $("s-per-class").value };
+    await staffCall("save", { settings, ...(file ? { csv: await file.text() } : {}) });
+    $("s-msg").textContent = "Saved. The plan below has been worked out again.";
+    $("s-file").value = "";
+    backtestKey = null;
+    await load($("date").value || null);
+  } catch (err) { $("s-msg").className = "status error"; $("s-msg").textContent = err.message; }
+});
+
+$("school").addEventListener("change", () => {
+  $("staff").hidden = $("school").value === "__uploaded";
+  $("staff-form").hidden = true; $("staff-open").hidden = false; $("s-msg").textContent = "";
+});
+
+(async function init() {
+  try {
+    const { schools } = await api("/api/schools");
+    $("school").replaceChildren(...schools.map(s => { const o = el("option", null, s.name); o.value = s.id; return o; }));
+    if (schools.length) await load(null); else setStatus("No schools are set up yet. Upload a timetable to start.");
+  } catch (err) { setStatus(err.message, true); }
+})();
+</script>
+</body>
+</html>

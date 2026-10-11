@@ -1,0 +1,157 @@
+day,class,start,end,activity,outdoor,teacher
+mon,ALL,07:40,08:00,Morning assembly,yes,
+mon,ALL,10:40,11:10,Lunch break in the playground,yes,
+mon,3A,08:00,08:40,PT,yes,Mr Rao
+mon,3A,08:40,09:20,English,no,Mr Thomas
+mon,3A,09:20,10:00,Science,no,Ms Khan
+mon,3A,10:00,10:40,Hindi,no,Ms Sharma
+mon,3A,11:10,11:50,Social Science,no,Mr Verma
+mon,3A,11:50,12:30,Computer,no,Ms Bose
+mon,3A,12:30,13:10,Art,no,Mr D'Souza
+mon,3A,13:10,13:50,Library,no,Ms Gill
+mon,7B,08:00,08:40,Hindi,no,Ms Sharma
+mon,7B,08:40,09:20,Social Science,no,Mr Verma
+mon,7B,09:20,10:00,Computer,no,Ms Bose
+mon,7B,10:00,10:40,Art,no,Mr D'Souza
+mon,7B,11:10,11:50,Library,no,Ms Gill
+mon,7B,11:50,12:30,Maths,no,Ms Iyer
+mon,7B,12:30,13:10,English,no,Mr Thomas
+mon,7B,13:10,13:50,Football,yes,Mr Rao
+mon,10A,08:00,08:40,Art,no,Mr D'Souza
+mon,10A,08:40,09:20,Library,no,Ms Gill
+mon,10A,09:20,10:00,PT,yes,Mr Rao
+mon,10A,10:00,10:40,English,no,Mr Thomas
+mon,10A,11:10,11:50,Science,no,Ms Khan
+mon,10A,11:50,12:30,Hindi,no,Ms Sharma
+mon,10A,12:30,13:10,Social Science,no,Mr Verma
+mon,10A,13:10,13:50,Computer,no,Ms Bose
+tue,ALL,07:40,08:00,Morning assembly,yes,
+tue,ALL,10:40,11:10,Lunch break in the playground,yes,
+tue,3A,08:00,08:40,English,no,Mr Thomas
+tue,3A,08:40,09:20,Science,no,Ms Khan
+tue,3A,09:20,10:00,Hindi,no,Ms Sharma
+tue,3A,10:00,10:40,Social Science,no,Mr Verma
+tue,3A,11:10,11:50,Games,yes,Mr Rao
+tue,3A,11:50,12:30,Art,no,Mr D'Souza
+tue,3A,12:30,13:10,Library,no,Ms Gill
+tue,3A,13:10,13:50,Maths,no,Ms Iyer
+tue,7B,08:00,08:40,Social Science,no,Mr Verma
+tue,7B,08:40,09:20,PT,yes,Mr Rao
+tue,7B,09:20,10:00,Art,no,Mr D'Souza
+tue,7B,10:00,10:40,Library,no,Ms Gill
+tue,7B,11:10,11:50,Maths,no,Ms Iyer
+tue,7B,11:50,12:30,English,no,Mr Thomas
+tue,7B,12:30,13:10,Science,no,Ms Khan
+tue,7B,13:10,13:50,Hindi,no,Ms Sharma
+tue,10A,08:00,08:40,Library,no,Ms Gill
+tue,10A,08:40,09:20,Maths,no,Ms Iyer
+tue,10A,09:20,10:00,English,no,Mr Thomas
+tue,10A,10:00,10:40,Science,no,Ms Khan
+tue,10A,11:10,11:50,Hindi,no,Ms Sharma
+tue,10A,11:50,12:30,Social Science,no,Mr Verma
+tue,10A,12:30,13:10,Cricket,yes,Mr Rao
+tue,10A,13:10,13:50,Art,no,Mr D'Souza
+wed,ALL,07:40,08:00,Morning assembly,yes,
+wed,ALL,10:40,11:10,Lunch break in the playground,yes,
+wed,3A,08:00,08:40,PT,yes,Mr Rao
+wed,3A,08:40,09:20,Hindi,no,Ms Sharma
+wed,3A,09:20,10:00,Social Science,no,Mr Verma
+wed,3A,10:00,10:40,Computer,no,Ms Bose
+wed,3A,11:10,11:50,Art,no,Mr D'Souza
+wed,3A,11:50,12:30,Library,no,Ms Gill
+wed,3A,12:30,13:10,Maths,no,Ms Iyer
+wed,3A,13:10,13:50,English,no,Mr Thomas
+wed,7B,08:00,08:40,Computer,no,Ms Bose
+wed,7B,08:40,09:20,Art,no,Mr D'Souza
+wed,7B,09:20,10:00,Gardening club,yes,Mr Rao
+wed,7B,10:00,10:40,Maths,no,Ms Iyer
+wed,7B,11:10,11:50,English,no,Mr Thomas
+wed,7B,11:50,12:30,Science,no,Ms Khan
+wed,7B,12:30,13:10,Hindi,no,Ms Sharma
+wed,7B,13:10,13:50,Social Science,no,Mr Verma
+wed,10A,08:40,09:20,English,no,Mr Thomas
+wed,10A,09:20,10:00,Science,no,Ms Khan
+wed,10A,08:00,08:40,Hindi,no,Ms Sharma
+wed,10A,10:00,10:40,Athletics,yes,Mr Rao
+wed,10A,11:10,11:50,Social Science,no,Mr Verma
+wed,10A,11:50,12:30,Computer,no,Ms Bose
+wed,10A,12:30,13:10,Art,no,Mr D'Souza
+wed,10A,13:10,13:50,Library,no,Ms Gill
+thu,ALL,07:40,08:00,Morning assembly,yes,
+thu,ALL,10:40,11:10,Lunch break in the playground,yes,
+thu,3A,08:00,08:40,Hindi,no,Ms Sharma
+thu,3A,08:40,09:20,Social Science,no,Mr Verma
+thu,3A,09:20,10:00,Computer,no,Ms Bose
+thu,3A,10:00,10:40,Art,no,Mr D'Souza
+thu,3A,11:10,11:50,Games,yes,Mr Rao
+thu,3A,11:50,12:30,Maths,no,Ms Iyer
+thu,3A,12:30,13:10,English,no,Mr Thomas
+thu,3A,13:10,13:50,Science,no,Ms Khan
+thu,7B,08:00,08:40,Art,no,Mr D'Souza
+thu,7B,08:40,09:20,PT,yes,Mr Rao
+thu,7B,09:20,10:00,Maths,no,Ms Iyer
+thu,7B,10:00,10:40,English,no,Mr Thomas
+thu,7B,11:10,11:50,Science,no,Ms Khan
+thu,7B,11:50,12:30,Hindi,no,Ms Sharma
+thu,7B,12:30,13:10,Social Science,no,Mr Verma
+thu,7B,13:10,13:50,Computer,no,Ms Bose
+thu,10A,08:00,08:40,English,no,Mr Thomas
+thu,10A,08:40,09:20,Science,no,Ms Khan
+thu,10A,09:20,10:00,Hindi,no,Ms Sharma
+thu,10A,10:00,10:40,PT,yes,Mr Rao
+thu,10A,11:10,11:50,Computer,no,Ms Bose
+thu,10A,11:50,12:30,Art,no,Mr D'Souza
+thu,10A,12:30,13:10,Library,no,Ms Gill
+thu,10A,13:10,13:50,Maths,no,Ms Iyer
+fri,ALL,07:40,08:00,Morning assembly,yes,
+fri,ALL,10:40,11:10,Lunch break in the playground,yes,
+fri,3A,08:00,08:40,PT,yes,Mr Rao
+fri,3A,08:40,09:20,Computer,no,Ms Bose
+fri,3A,09:20,10:00,Art,no,Mr D'Souza
+fri,3A,10:00,10:40,Library,no,Ms Gill
+fri,3A,11:10,11:50,Maths,no,Ms Iyer
+fri,3A,11:50,12:30,English,no,Mr Thomas
+fri,3A,12:30,13:10,Science,no,Ms Khan
+fri,3A,13:10,13:50,Hindi,no,Ms Sharma
+fri,7B,08:00,08:40,Library,no,Ms Gill
+fri,7B,08:40,09:20,Maths,no,Ms Iyer
+fri,7B,09:20,10:00,English,no,Mr Thomas
+fri,7B,10:00,10:40,Science,no,Ms Khan
+fri,7B,11:10,11:50,Hindi,no,Ms Sharma
+fri,7B,11:50,12:30,Athletics,yes,Mr Rao
+fri,7B,12:30,13:10,Computer,no,Ms Bose
+fri,7B,13:10,13:50,Art,no,Mr D'Souza
+fri,10A,08:00,08:40,Science,no,Ms Khan
+fri,10A,08:40,09:20,Hindi,no,Ms Sharma
+fri,10A,09:20,10:00,Social Science,no,Mr Verma
+fri,10A,10:00,10:40,Computer,no,Ms Bose
+fri,10A,11:10,11:50,Art,no,Mr D'Souza
+fri,10A,11:50,12:30,Library,no,Ms Gill
+fri,10A,12:30,13:10,Maths,no,Ms Iyer
+fri,10A,13:10,13:50,Football,yes,Mr Rao
+sat,ALL,07:40,08:00,Morning assembly,yes,
+sat,ALL,10:40,11:10,Lunch break in the playground,yes,
+sat,3A,08:00,08:40,Computer,no,Ms Bose
+sat,3A,09:20,10:00,Library,no,Ms Gill
+sat,3A,08:40,09:20,Maths,no,Ms Iyer
+sat,3A,10:00,10:40,Yoga in the field,yes,Mr Rao
+sat,3A,11:10,11:50,English,no,Mr Thomas
+sat,3A,11:50,12:30,Science,no,Ms Khan
+sat,3A,12:30,13:10,Hindi,no,Ms Sharma
+sat,3A,13:10,13:50,Social Science,no,Mr Verma
+sat,7B,08:00,08:40,Maths,no,Ms Iyer
+sat,7B,08:40,09:20,PT,yes,Mr Rao
+sat,7B,09:20,10:00,Science,no,Ms Khan
+sat,7B,10:00,10:40,Hindi,no,Ms Sharma
+sat,7B,11:10,11:50,Social Science,no,Mr Verma
+sat,7B,11:50,12:30,Computer,no,Ms Bose
+sat,7B,12:30,13:10,Art,no,Mr D'Souza
+sat,7B,13:10,13:50,Library,no,Ms Gill
+sat,10A,08:00,08:40,Hindi,no,Ms Sharma
+sat,10A,08:40,09:20,Social Science,no,Mr Verma
+sat,10A,09:20,10:00,PT,yes,Mr Rao
+sat,10A,10:00,10:40,Art,no,Mr D'Souza
+sat,10A,11:10,11:50,Library,no,Ms Gill
+sat,10A,11:50,12:30,Maths,no,Ms Iyer
+sat,10A,12:30,13:10,English,no,Mr Thomas
+sat,10A,13:10,13:50,Science,no,Ms Khan

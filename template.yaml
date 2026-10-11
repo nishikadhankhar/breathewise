@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  BreatheWise - maps the air quality forecast onto a school's timetable, tells staff
+  which outdoor periods to move or hold indoors, and writes the notice for parents.
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Description: Email address that receives the evening plan. AWS sends it a confirmation link first.
+    AllowedPattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+  UseBedrock:
+    Type: String
+    Default: '0'
+    AllowedValues: ['0', '1']
+    Description: Set to 1 to have Amazon Bedrock word the parent notice. With 0 a fixed template is used.
+  BedrockModelId:
+    Type: String
+    Default: eu.amazon.nova-lite-v1:0
+    Description: Bedrock model or inference profile used to word the parent notice.
+  BedrockRegion:
+    Type: String
+    Default: eu-north-1
+    Description: Region where Bedrock is called. It can differ from the region the app is deployed in.
+  AdminPasscode:
+    Type: String
+    NoEcho: true
+    Default: ''
+    AllowedPattern: '^$|^.{10,64}$'
+    ConstraintDescription: Leave empty, or use 10 to 64 characters.
+    Description: Passcode for changing a school's settings from the web page. Empty switches that off.
+  DomainName:
+    Type: String
+    Default: ''
+    Description: Optional. Your own web address for the site, for example breathewise.example.org.
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: Needed with DomainName. An issued ACM certificate for it, in the same region as this stack.
+  MorningRunCron:
+    Type: String
+    Default: cron(0 1 * * ? *)
+    Description: When the morning update is checked, in UTC. The default is 06:30 India time.
+  EveningRunCron:
+    Type: String
+    Default: cron(30 13 * * ? *)
+    Description: When the evening plan is sent, in UTC. The default is 19:00 India time.
+
+Conditions:
+  HasDomain: !And [!Not [!Equals [!Ref DomainName, '']], !Not [!Equals [!Ref CertificateArn, '']]]
+
+Resources:
+  # Timetables and school settings, one folder per school.
+  SchoolsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # The evening plan is published here; staff subscribe by email.
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: BreatheWise
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertEmail
+
+  # Public web address. Throttled, because anyone with the link can call it.
+  WebApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 5
+
+  # One function serves the page and the API, and runs the evening job.
+  AppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: build/
+      Handler: app.handler.lambda_handler
+      Runtime: python3.13
+      Architectures: [arm64]
+      MemorySize: 512
+      Timeout: 29
+      Environment:
+        Variables:
+          SCHOOLS_BUCKET: !Ref SchoolsBucket
+          ALERT_TOPIC_ARN: !Ref AlertTopic
+          USE_BEDROCK: !Ref UseBedrock
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          BEDROCK_REGION: !Ref BedrockRegion
+          ADMIN_PASSCODE: !Ref AdminPasscode
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref SchoolsBucket
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt AlertTopic.TopicName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource:
+                - !Sub arn:${AWS::Partition}:bedrock:*::foundation-model/*
+                - !Sub arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:inference-profile/*
+      Events:
+        Web:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref WebApi
+        Evening:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref EveningRunCron
+            Description: Plan the next school day and email it to staff.
+        Morning:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref MorningRunCron
+            Input: '{"run": "morning"}'
+            Description: Email staff only what has changed since last night's plan.
+
+  # Your own web address, if DomainName and CertificateArn are given.
+  SiteDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Condition: HasDomain
+    Properties:
+      DomainName: !Ref DomainName
+      DomainNameConfigurations:
+        - CertificateArn: !Ref CertificateArn
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+  SiteDomainMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Condition: HasDomain
+    DependsOn: WebApiApiGatewayDefaultStage
+    Properties:
+      ApiId: !Ref WebApi
+      DomainName: !Ref SiteDomain
+      Stage: $default
+
+Outputs:
+  DomainTarget:
+    Condition: HasDomain
+    Description: Point a CNAME record for your domain at this address.
+    Value: !GetAtt SiteDomain.RegionalDomainName
+  WebUrl:
+    Description: Open this in a browser.
+    Value: !Sub https://${WebApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/
+  SchoolsBucketName:
+    Description: Upload schools/<id>/school.json and timetable.csv here.
+    Value: !Ref SchoolsBucket
+  FunctionName:
+    Value: !Ref AppFunction
+  AlertTopicArn:
+    Value: !Ref AlertTopic

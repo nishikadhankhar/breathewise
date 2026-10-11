@@ -1,0 +1,25 @@
+{
+  "name": "Demo Public School, New Delhi",
+  "lat": 28.61,
+  "lon": 77.21,
+  "timezone": "Asia/Kolkata",
+  "thresholds": {
+    "primary_max_grade": 5,
+    "primary_limit": 200,
+    "senior_limit": 200,
+    "forecast_margin": 30,
+    "sensitive_limit": 100,
+    "max_outdoor_classes": 1,
+    "asthma_limit": 150,
+    "avoid_last_period": 0,
+    "avoid_back_to_back": 0,
+    "daily_outdoor_minutes": 90
+  },
+  "students": {
+    "school": 105,
+    "per_class": 35
+  },
+  "asthma": {
+    "10A": 2
+  }
+}
